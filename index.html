@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>HK SERVER — Access Authentication</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: #000000;
+      color: #ffffff;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 22px 16px;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 100%;
+      background: radial-gradient(circle at 50% 30%, rgba(0, 119, 255, 0.15), transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .top-bar {
+      width: 100%;
+      max-width: 400px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      z-index: 2;
+    }
+
+    .access-status {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .square-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+    }
+
+    .granted-color { color: #00ffaa; }
+    .granted-dot {
+      background-color: #00ffaa;
+      box-shadow: 0 0 10px #00ffaa, 0 0 20px #00ffaa;
+    }
+
+    .locked-color { color: #ff0055; }
+    .locked-dot {
+      background-color: #ff0055;
+      box-shadow: 0 0 10px #ff0055, 0 0 20px #ff0055;
+    }
+
+    .center-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      width: 100%;
+      max-width: 320px;
+      margin: auto 0;
+      z-index: 2;
+    }
+
+    .blue-aura {
+      position: absolute;
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(0, 150, 255, 0.6) 0%, rgba(120, 0, 255, 0.3) 50%, transparent 75%);
+      filter: blur(30px);
+      border-radius: 50%;
+      z-index: 1;
+      animation: flamePulse 3s infinite alternate ease-in-out;
+    }
+
+    .emblem-svg {
+      width: 260px;
+      height: 260px;
+      z-index: 2;
+      filter: drop-shadow(0 0 20px rgba(0, 170, 255, 0.9));
+    }
+
+    .rgb-border-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+      border-radius: 22px;
+      padding: 2px;
+      background: linear-gradient(90deg, #ff0055, #7700ff, #00d4ff, #00ffaa, #ffea00, #ff0055);
+      background-size: 400% 400%;
+      animation: rgbFlow 4s linear infinite;
+      box-shadow: 0 0 25px rgba(0, 212, 255, 0.25);
+      z-index: 2;
+    }
+
+    .bottom-card {
+      background-color: #02090e;
+      border-radius: 20px;
+      padding: 22px 18px;
+      width: 100%;
+    }
+
+    .login-box {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      text-align: center;
+    }
+
+    .key-input-container {
+      position: relative;
+      padding: 2px;
+      border-radius: 14px;
+      background: linear-gradient(90deg, #00ffaa, #0088ff, #ff00bb, #00ffaa);
+      background-size: 300% 300%;
+      animation: rgbFlow 3s linear infinite;
+    }
+
+    .key-input {
+      width: 100%;
+      background: #040e14;
+      border: none;
+      border-radius: 12px;
+      padding: 15px;
+      font-size: 15px;
+      color: #00ffaa;
+      text-align: center;
+      letter-spacing: 2px;
+      font-weight: 800;
+      outline: none;
+    }
+
+    .rgb-btn {
+      position: relative;
+      background: linear-gradient(90deg, #ff0055, #00d4ff, #00ffaa, #ffaa00, #ff0055);
+      background-size: 400% 400%;
+      animation: rgbFlow 3s linear infinite;
+      color: #000;
+      border: none;
+      border-radius: 14px;
+      padding: 15px;
+      font-size: 13.5px;
+      font-weight: 900;
+      letter-spacing: 1.8px;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(0, 255, 170, 0.4);
+      transition: transform 0.2s;
+    }
+
+    .rgb-btn:active {
+      transform: scale(0.97);
+    }
+
+    .admin-trigger-btn {
+      color: #6a95a8;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 6px;
+      letter-spacing: 1px;
+    }
+    .admin-trigger-btn:hover { color: #00ffaa; }
+
+    .row-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13.5px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      margin-bottom: 11px;
+    }
+
+    .col-label { color: #00ffaa; }
+    .col-val-green {
+      color: #00ffaa;
+      text-shadow: 0 0 10px rgba(0, 255, 170, 0.6);
+    }
+
+    .countdown-container {
+      background: #011d1c;
+      border: 1.5px solid #00ffaa;
+      border-radius: 12px;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      box-shadow: 0 0 15px rgba(0, 255, 170, 0.25);
+    }
+
+    .countdown-timer-text {
+      font-family: monospace;
+      font-size: 15px;
+      font-weight: 900;
+      color: #00ffaa;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px #00ffaa;
+    }
+
+    .inner-preset-box {
+      position: relative;
+      border-radius: 14px;
+      padding: 2px;
+      background: linear-gradient(90deg, #00ffaa, #0088ff, #00ffaa);
+      background-size: 200% 200%;
+      animation: rgbFlow 3s linear infinite;
+      margin-top: 10px;
+    }
+
+    .inner-preset-content {
+      background: #021217;
+      border-radius: 12px;
+      padding: 15px 13px;
+    }
+
+    .preset-badge {
+      background: #032b26;
+      border: 1px solid #00ffaa;
+      color: #00ffaa;
+      font-size: 10px;
+      font-weight: 900;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .preset-text {
+      color: #ffffff;
+      font-size: 11.5px;
+      font-weight: 800;
+      line-height: 1.6;
+      margin-top: 10px;
+      letter-spacing: 0.8px;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+      padding: 20px;
+    }
+
+    .modal-box {
+      position: relative;
+      width: 100%;
+      max-width: 360px;
+      padding: 2px;
+      border-radius: 20px;
+      background: linear-gradient(90deg, #ff0055, #7700ff, #00d4ff, #00ffaa, #ff0055);
+      background-size: 400% 400%;
+      animation: rgbFlow 3s linear infinite;
+    }
+
+    .modal-inner {
+      background: #030c12;
+      border-radius: 18px;
+      padding: 24px 20px;
+      text-align: center;
+    }
+
+    .modal-title {
+      font-size: 17px;
+      font-weight: 900;
+      color: #00ffaa;
+      letter-spacing: 1.5px;
+      margin-bottom: 14px;
+    }
+
+    .modal-input {
+      width: 100%;
+      background: #081720;
+      border: 1.5px solid #00d4ff;
+      border-radius: 12px;
+      padding: 13px;
+      color: #ffffff;
+      font-size: 14px;
+      text-align: center;
+      outline: none;
+      margin-bottom: 15px;
+      font-weight: 700;
+    }
+
+    .key-display-card {
+      background: #021a1f;
+      border: 1.5px dashed #00ffaa;
+      border-radius: 14px;
+      padding: 16px;
+      margin: 15px 0;
+    }
+
+    .key-code-text {
+      font-size: 19px;
+      font-weight: 900;
+      color: #00ffaa;
+      letter-spacing: 2px;
+      font-family: monospace;
+    }
+
+    .close-btn {
+      background: transparent;
+      color: #728c9b;
+      border: none;
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 12px;
+      cursor: pointer;
+    }
+
+    @keyframes rgbFlow {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    @keyframes flamePulse {
+      0% { transform: scale(0.92); opacity: 0.6; }
+      100% { transform: scale(1.08); opacity: 0.95; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <div id="top-status-text" class="access-status locked-color">
+      <span id="top-dot" class="square-dot locked-dot"></span>
+      ACCESS REQUIRED
+    </div>
+    <div id="top-lock-status" class="locked-color">LOCKED</div>
+  </div>
+
+  <div class="center-container">
+    <div class="blue-aura"></div>
+    <svg class="emblem-svg" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M150 20L170 85L225 35L200 105L270 80L215 140L285 160L210 185L260 230L185 215L170 280L145 220L115 280L110 215L35 235L85 180L15 155L85 135L25 80L95 105L75 35L130 85L150 20Z" fill="url(#ice_grad)" opacity="0.85"/>
+      <path d="M150 40L165 95L210 55L190 115L245 95L205 145L255 165L195 185L235 220L175 210L160 260L145 210L125 255L120 205L55 220L95 175L40 155L95 140L45 95L105 115L90 55L135 95L150 40Z" fill="url(#inner_flame)" opacity="0.95"/>
+      <path d="M135 115L142 125L150 112L158 125L165 115L163 130H137L135 115Z" fill="#e2f1ff" stroke="#0099ff" stroke-width="1.5"/>
+      <text x="150" y="170" text-anchor="middle" font-size="34" font-weight="900" font-style="italic" fill="url(#metal_text)" stroke="#0a2a4a" stroke-width="2" letter-spacing="2">
+        HK SERVER
+      </text>
+      <defs>
+        <linearGradient id="ice_grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#0066ff"/><stop offset="50%" stop-color="#00d4ff"/><stop offset="100%" stop-color="#002288"/>
+        </linearGradient>
+        <linearGradient id="inner_flame" x1="50%" y1="0%" x2="50%" y2="100%">
+          <stop offset="0%" stop-color="#ffffff"/><stop offset="40%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#0284c7"/>
+        </linearGradient>
+        <linearGradient id="metal_text" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stop-color="#ffffff"/><stop offset="45%" stop-color="#e2e8f0"/><stop offset="55%" stop-color="#94a3b8"/><stop offset="100%" stop-color="#ffffff"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+
+  <div class="rgb-border-wrapper">
+    <div class="bottom-card">
+      
+      <!-- LOGIN BOX -->
+      <div id="login-section" class="login-box">
+        <span style="font-size:12px; color:#6093a1; font-weight:800; letter-spacing:1.5px;">ENTER 24H ACCESS KEY</span>
+        
+        <div class="key-input-container">
+          <input type="text" id="access-key-input" class="key-input" placeholder="ENTER ACCESS KEY" autocomplete="off" />
+        </div>
+
+        <button class="rgb-btn" onclick="verifyKey()">⚡ ACTIVATE & AUTO CONNECT</button>
+        <div id="msg" style="font-size:12px; font-weight:bold; min-height:16px;"></div>
+
+        <span class="admin-trigger-btn" onclick="openPasswordModal()">⚙️ Generate New Key (Admin)</span>
+      </div>
+
+      <!-- ACTIVE DASHBOARD -->
+      <div id="active-section" style="display: none;">
+        <div class="row-item">
+          <span class="col-label">NAME</span>
+          <span class="col-val-green">HK SERVER</span>
+        </div>
+        <div class="row-item">
+          <span class="col-label">STATUS</span>
+          <span class="col-val-green">ACTIVE</span>
+        </div>
+
+        <div class="countdown-container">
+          <span style="font-size:11px; font-weight:900; color:#00ffaa; letter-spacing:1px;">⏳ TIME REMAINING</span>
+          <span id="countdown-timer" class="countdown-timer-text">24:00:00</span>
+        </div>
+
+        <div class="row-item">
+          <span class="col-label">EXPIRES AT</span>
+          <span id="expiry-display" style="color:#ffffff; font-family:monospace; font-size:12px;">--</span>
+        </div>
+
+        <div class="row-item" style="margin-top:12px; margin-bottom:6px;">
+          <span style="color:#416f73; font-size:11.5px;">SELECT PRESET</span>
+          <span class="col-val-green">ACTIVE</span>
+        </div>
+
+        <div class="inner-preset-box">
+          <div class="inner-preset-content">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span class="preset-badge">⚡ PRESET 1</span>
+              <span style="color:#00ffaa; font-size:11px; font-weight:900;">✓ ACTIVE</span>
+            </div>
+            <div class="preset-text">
+              AIM LIGHT+FREEZE ON FIRE AND SCOPE+ LOCATION+ FAST PICKUP+ WALL FLIP
+            </div>
+          </div>
+        </div>
+
+        <!-- 1-CLICK LAUNCH BUTTON -->
+        <button class="rgb-btn" style="width:100%; margin-top:16px;" onclick="launchHappApp()">🚀 OPEN & CONNECT HAPP APP</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- POPUP 1 -->
+  <div id="password-modal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-inner">
+        <div class="modal-title">🔐 ADMIN AUTHENTICATION</div>
+        <p style="color:#7292a1; font-size:12px; margin-bottom:14px;">Enter Admin Password to Generate 24H Key:</p>
+        <input type="password" id="admin-pass-input" class="modal-input" placeholder="Enter Password" />
+        <button class="rgb-btn" style="width:100%;" onclick="submitAdminPassword()">UNLOCK GENERATOR</button>
+        <button class="close-btn" onclick="closeModals()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP 2 -->
+  <div id="key-result-modal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-inner">
+        <div class="modal-title">🎉 KEY GENERATED!</div>
+        <p style="color:#7292a1; font-size:12px;">Valid for: <strong>24 Hours</strong></p>
+        <div class="key-display-card">
+          <div id="new-key-code" class="key-code-text">HK-XXXX-XXXX</div>
+        </div>
+        <button id="copy-key-btn" class="rgb-btn" style="width:100%;" onclick="copyGeneratedKey()">📋 COPY KEY</button>
+        <button class="close-btn" onclick="closeModals()">Done / Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const VLESS_NODE_URL = "vless://331461f0-cd69-11f1-a76a-37da4ed8df4d@crimson-surf-c108.acreater878.workers.dev:443?encryption=none&security=tls&sni=crimson-surf-c108.acreater878.workers.dev&type=ws&host=crimson-surf-c108.acreater878.workers.dev&path=%2F#HK-SERVER";
+    const ADMIN_PASSWORD = "HK@2005";
+    let newlyGeneratedKey = "";
+    let countdownInterval = null;
+
+    window.onload = function() {
+      checkExistingSession();
+    };
+
+    function checkExistingSession() {
+      const savedExpiry = localStorage.getItem("hk_expiry");
+      if (savedExpiry) {
+        const expiryTime = parseInt(savedExpiry, 10);
+        if (new Date().getTime() < expiryTime) {
+          showActiveDashboard(expiryTime);
+        } else {
+          expireSession();
+        }
+      }
+    }
+
+    // KEY DALTE HI AUTOMATIC HAPP OPEN + COUNTDOWN
+    function verifyKey() {
+      const input = document.getElementById("access-key-input").value.trim();
+      const msg = document.getElementById("msg");
+      let validKeys = JSON.parse(localStorage.getItem("hk_keys") || "[]");
+
+      if (input === ADMIN_PASSWORD || validKeys.includes(input.toUpperCase())) {
+        msg.innerText = "";
+        
+        const expiryTime = new Date().getTime() + (24 * 60 * 60 * 1000);
+        localStorage.setItem("hk_expiry", expiryTime);
+
+        showActiveDashboard(expiryTime);
+
+        // सीधे Happ ऐप में VLESS लिंक पुश करके ऐप ओपन करेगा
+        launchHappApp();
+      } else {
+        msg.style.color = "#ff0055";
+        msg.innerText = "INVALID OR EXPIRED KEY!";
+      }
+    }
+
+    // सीधा Happ ऐप खोलने का फ़ंक्शन
+    function launchHappApp() {
+      window.location.href = VLESS_NODE_URL;
+    }
+
+    function showActiveDashboard(expiryTime) {
+      document.getElementById("login-section").style.display = "none";
+      document.getElementById("active-section").style.display = "block";
+
+      const topText = document.getElementById("top-status-text");
+      topText.className = "access-status granted-color";
+      topText.innerHTML = '<span class="square-dot granted-dot"></span> ACCESS GRANTED';
+
+      const topLock = document.getElementById("top-lock-status");
+      topLock.className = "granted-color";
+      topLock.innerText = "UNLOCKED";
+
+      const dateObj = new Date(expiryTime);
+      document.getElementById("expiry-display").innerText =
+        dateObj.toLocaleDateString() + " " + dateObj.toLocaleTimeString();
+
+      startLiveCountdown(expiryTime);
+    }
+
+    function startLiveCountdown(expiryTime) {
+      if (countdownInterval) clearInterval(countdownInterval);
+
+      function updateTimer() {
+        const now = new Date().getTime();
+        const distance = expiryTime - now;
+
+        if (distance <= 0) {
+          clearInterval(countdownInterval);
+          expireSession();
+          return;
+        }
+
+        const hours = Math.floor(distance / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        const h = String(hours).padStart(2, '0');
+        const m = String(minutes).padStart(2, '0');
+        const s = String(seconds).padStart(2, '0');
+
+        document.getElementById("countdown-timer").innerText = `${h}:${m}:${s}`;
+      }
+
+      updateTimer();
+      countdownInterval = setInterval(updateTimer, 1000);
+    }
+
+    function expireSession() {
+      localStorage.removeItem("hk_expiry");
+      if (countdownInterval) clearInterval(countdownInterval);
+
+      document.getElementById("active-section").style.display = "none";
+      document.getElementById("login-section").style.display = "flex";
+
+      const topText = document.getElementById("top-status-text");
+      topText.className = "access-status locked-color";
+      topText.innerHTML = '<span class="square-dot locked-dot"></span> ACCESS REQUIRED';
+
+      const topLock = document.getElementById("top-lock-status");
+      topLock.className = "locked-color";
+      topLock.innerText = "LOCKED";
+
+      document.getElementById("msg").style.color = "#ff0055";
+      document.getElementById("msg").innerText = "24 HOURS EXPIRED! ENTER NEW KEY.";
+    }
+
+    function openPasswordModal() {
+      document.getElementById("admin-pass-input").value = "";
+      document.getElementById("password-modal").style.display = "flex";
+    }
+
+    function submitAdminPassword() {
+      const enteredPass = document.getElementById("admin-pass-input").value.trim();
+      if (enteredPass === ADMIN_PASSWORD) {
+        document.getElementById("password-modal").style.display = "none";
+
+        newlyGeneratedKey = "HK-" + Math.random().toString(36).substring(2, 6).toUpperCase() + "-" + Math.random().toString(36).substring(2, 6).toUpperCase();
+        
+        let keys = JSON.parse(localStorage.getItem("hk_keys") || "[]");
+        keys.push(newlyGeneratedKey);
+        localStorage.setItem("hk_keys", JSON.stringify(keys));
+
+        document.getElementById("new-key-code").innerText = newlyGeneratedKey;
+        const copyBtn = document.getElementById("copy-key-btn");
+        copyBtn.innerText = "📋 COPY KEY";
+        copyBtn.style.background = "";
+        document.getElementById("key-result-modal").style.display = "flex";
+      } else {
+        alert("गलत पासवर्ड!");
+      }
+    }
+
+    function copyGeneratedKey() {
+      navigator.clipboard.writeText(newlyGeneratedKey).then(() => {
+        const copyBtn = document.getElementById("copy-key-btn");
+        copyBtn.innerText = "✓ COPIED TO CLIPBOARD!";
+        copyBtn.style.background = "#00ffaa";
+        copyBtn.style.color = "#000";
+      });
+    }
+
+    function closeModals() {
+      document.getElementById("password-modal").style.display = "none";
+      document.getElementById("key-result-modal").style.display = "none";
+    }
+  </script>
+
+</body>
+</html>
